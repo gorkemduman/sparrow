@@ -10,7 +10,7 @@ defmodule Sparrow do
     raw_fcm_config = Application.get_env(:sparrow, :fcm)
     raw_apns_config = Application.get_env(:sparrow, :apns)
     raw_hns_config = Application.get_env(:sparrow, :hns)
-    start({raw_fcm_config, raw_apns_config})
+    start({raw_fcm_config, raw_apns_config, raw_hns_config})
   end
 
   @spec start({Keyword.t(), Keyword.t()}) :: Supervisor.on_start()
