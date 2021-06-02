@@ -7,7 +7,7 @@ defmodule Sparrow.PoolsWarden do
   use Sparrow.Telemetry.Timer
   require Logger
 
-  @type pool_type :: :fcm | {:apns, :dev} | {:apns, :prod}
+  @type pool_type :: :fcm | {:apns, :dev} | {:apns, :prod} | :hns
 
   @tab_name :sparrow_pools_warden_tab
 

@@ -9,11 +9,12 @@ defmodule Sparrow do
   def start(_type, _args) do
     raw_fcm_config = Application.get_env(:sparrow, :fcm)
     raw_apns_config = Application.get_env(:sparrow, :apns)
+    raw_hns_config = Application.get_env(:sparrow, :hns)
     start({raw_fcm_config, raw_apns_config})
   end
 
   @spec start({Keyword.t(), Keyword.t()}) :: Supervisor.on_start()
-  def start({raw_fcm_config, raw_apns_config}) do
+  def start({raw_fcm_config, raw_apns_config, raw_hns_config}) do
     %{:enabled => is_enabled} =
       Application.get_env(:sparrow, Sparrow.PoolsWarden)
 
@@ -22,6 +23,7 @@ defmodule Sparrow do
       |> maybe_start_pools_warden()
       |> maybe_append({Sparrow.FCM.V1.Supervisor, raw_fcm_config})
       |> maybe_append({Sparrow.APNS.Supervisor, raw_apns_config})
+      |> maybe_append({Sparrow.HNS.V1.Supervisor , raw_hns_config})
 
     opts = [strategy: :one_for_one]
     Supervisor.start_link(children, opts)
