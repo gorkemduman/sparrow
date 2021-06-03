@@ -52,7 +52,7 @@ defmodule Sparrow.HNS.V1.Pool.Supervisor do
     tls_opts =
       Keyword.get(raw_pool_config, :tls_opts, setup_default_tls_options())
 
-    ping_interval = Keyword.get(raw_pool_config, :ping_interval, 5000)
+    ping_interval = Keyword.get(raw_pool_config, :ping_interval, nil)
     reconnection_attempts = Keyword.get(raw_pool_config, :reconnect_attempts, 3)
 
     pool_tags = Keyword.get(raw_pool_config, :tags, [])
