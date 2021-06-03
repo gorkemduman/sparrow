@@ -32,6 +32,7 @@ defmodule Sparrow.HNS.V1.Pool.Supervisor do
             Enum.with_index(pool_configs) do
         id = String.to_atom("Sparrow.Hns.Pool.ID.#{index}")
 
+        IO.inspect(pool_config)
         %{
           id: id,
           start:
