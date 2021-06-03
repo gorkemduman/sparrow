@@ -83,6 +83,7 @@ defmodule Sparrow.H2Worker.Pool do
         pool_tags: tags
     }
 
+    IO.inspect(worker_config_with_pool)
     :wpool.start_pool(
       config.pool_name,
       [

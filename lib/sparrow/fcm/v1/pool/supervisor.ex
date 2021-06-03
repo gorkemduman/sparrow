@@ -30,7 +30,7 @@ defmodule Sparrow.FCM.V1.Pool.Supervisor do
     children =
       for {{_json, {pool_config, pool_tags}}, index} <-
             Enum.with_index(pool_configs) do
-        id = String.to_atom("Sparrow.Fcm.Pool.ID.#{index}")
+        id = String.to_atom("Sparrow.Fcm.Pool.ID." <> Integer.to_string(index))
 
         %{
           id: id,
