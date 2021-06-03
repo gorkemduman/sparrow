@@ -4,7 +4,7 @@ defmodule Sparrow.HNS.V1.Pool.Supervisor do
   """
   use Supervisor
 
-  @hns_default_endpoint "hns.googleapis.com"
+  @hns_default_endpoint "push-api.cloud.huawei.com"
   @account_key "client_email"
 
   @spec start_link(Keyword.t()) :: Supervisor.on_start()
