@@ -41,7 +41,7 @@ defmodule Sparrow.MixProject do
       {:logger_lager_backend, "~> 0.1.0"},
       {:plug, "1.6.1", only: :test},
       {:goth, github: "gorkemduman/goth", ref: "88f3624", runtime: false},
-      {:huth, github: "gorkemduman/huth", ref: "9554ffd", runtime: false},
+      {:huth, github: "gorkemduman/huth", ref: "5b8a4a8", runtime: false},
       {:httpoison, "~> 1.0"},
       {:worker_pool, "== 4.0.1"},
       {:assert_eventually, "~> 0.2.0", only: [:test]},
