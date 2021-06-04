@@ -40,9 +40,9 @@ defmodule Sparrow.MixProject do
       {:lager, ">= 3.2.1", override: true},
       {:logger_lager_backend, "~> 0.1.0"},
       {:plug, "1.6.1", only: :test},
-      {:goth, "~> 1.1.0", runtime: false},
-      {:huth, github: "gorkemduman/huth", ref: "b3db624", runtime: false},
-      {:httpoison, "~> 0.11 or ~> 1.0"},
+      {:goth, github: "gorkemduman/goth", ref: "88f3624", runtime: false},
+      {:huth, github: "gorkemduman/huth", ref: "9554ffd", runtime: false},
+      {:httpoison, "~> 1.0"},
       {:worker_pool, "== 4.0.1"},
       {:assert_eventually, "~> 0.2.0", only: [:test]},
       {:telemetry, "~>0.4.1"}
