@@ -128,15 +128,29 @@ defmodule Sparrow.HNS.V1.Notification do
 
   @spec do_normalize(t) :: {:ok, t} | {:error, :invalid_notification}
   def do_normalize(notification) do
-    data = Enum.map(notification.data, &normalize_value/1)
+    data = to_string(Poison.Encoder.encode(notification.data, []))
+    {:ok, %{notification | data: data}}
+#    data = Enum.map(notification.data, &normalize_value/1)
+#
+#    case Enum.all?(data) do
+#      false ->
+#        {:error, :invalid_notification}
+#
+#      true ->
+#        {:ok, %{notification | data: Map.new(data)}}
+#    end
+  end
 
-    case Enum.all?(data) do
-      false ->
-        {:error, :invalid_notification}
+  defp normalize_value({:data, v}) do
+    {:data, to_string(Poison.Encoder.encode(v, []))}
+  rescue
+    Protocol.UndefinedError -> false
+  end
 
-      true ->
-        {:ok, %{notification | data: Map.new(data)}}
-    end
+  defp normalize_value({:token, v}) do
+    {:token, "[" <> to_string(v) <> "]"}
+  rescue
+    Protocol.UndefinedError -> false
   end
 
   defp normalize_value({k, v}) do

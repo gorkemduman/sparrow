@@ -115,40 +115,26 @@ defmodule Sparrow.HNS.V1 do
         raw: inspect({:ok, {headers, body}})
       )
 
-    if {":status", "200"} in headers do
-      _ =
-        Logger.debug("Processing HNS notification response",
-          what: :hns_push_response,
-          result: :success,
-          status: "200"
-        )
 
-      # TODO extend implementation if needed in further tests
+    {:ok, attrs} = body |> Jason.decode()
 
-      :ok
-    else
-      status = get_status_from_headers(headers)
-
-      _ =
-        Logger.debug("Processing HNS notification response",
-          what: :hns_push_response,
-          result: :error,
-          status: inspect(status)
-        )
-
-      reason =
-        body
-        |> get_reason_from_body()
-        |> String.to_atom()
-
-      _ =
-        Logger.warn("Processing HNS notification response",
-          what: :hns_push_response,
-          result: :error,
-          response_body: inspect(body)
-        )
-
-      {:error, reason}
+    case attrs["code"] do
+      "80000000" ->
+        _ =
+          Logger.debug("Processing HNS notification response",
+            what: :hns_push_response,
+            result: :success,
+            status: "200"
+          )
+        :ok
+      _ ->
+        _ =
+          Logger.warn("Processing HNS notification response error, " <> attrs["code"] <> ":" <> attrs["msg"],
+            what: :hns_push_response,
+            result: :error,
+            status: inspect(body)
+          )
+        {:error, attrs["msg"]}
     end
   end
 
@@ -211,8 +197,8 @@ defmodule Sparrow.HNS.V1 do
   defp make_body(notification) do
     %{
       :data => notification.data,
-      :notification => build_notification(notification),
-      notification.target_type => notification.target
+      :notification => nil,
+      notification.target_type => [notification.target]
     }
     |> maybe_add_android(notification.android)
     |> maybe_add_webpush(notification.webpush)

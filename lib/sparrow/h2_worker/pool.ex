@@ -84,14 +84,28 @@ defmodule Sparrow.H2Worker.Pool do
     }
 
     IO.inspect(worker_config_with_pool)
-    :wpool.start_pool(
-      config.pool_name,
-      [
-        {:workers, config.worker_num},
-        {:worker, {Sparrow.H2Worker, worker_config_with_pool}}
-        | config.raw_opts
-      ]
-    )
+
+    case pool_type do
+      :hns ->
+          :wpool.start_pool(
+            config.pool_name,
+            [
+              {:workers, config.worker_num},
+              {:worker, {Sparrow.H2Worker.Hns, worker_config_with_pool}}
+              | config.raw_opts
+            ]
+          )
+      _ ->
+          :wpool.start_pool(
+            config.pool_name,
+            [
+              {:workers, config.worker_num},
+              {:worker, {Sparrow.H2Worker, worker_config_with_pool}}
+              | config.raw_opts
+            ]
+          )
+
+    end
   end
 
   @doc """
