@@ -231,7 +231,8 @@ defmodule Sparrow.HNS.V1 do
   end
 
   defp maybe_add_android(body, android) do
-    Map.put(body, :android, Sparrow.HNS.V1.Android.to_map(android))
+    android = %{ Sparrow.HNS.V1.Android.to_map(android) | notification: nil}
+    Map.put(body, :android, android)
   end
 
   @spec maybe_add_webpush(map, webpush) :: map
