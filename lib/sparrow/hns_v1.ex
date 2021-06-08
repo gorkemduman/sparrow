@@ -80,6 +80,12 @@ defmodule Sparrow.HNS.V1 do
     request = Request.new(headers, json_body, path, timeout)
 
     _ =
+      Logger.info("Sending HNS notification " <> json_body,
+        what: :push_hns_notification,
+        request: request
+      )
+
+    _ =
       Logger.debug("Sending HNS notification",
         what: :push_hns_notification,
         request: request
