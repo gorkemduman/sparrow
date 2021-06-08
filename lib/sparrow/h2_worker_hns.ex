@@ -107,32 +107,13 @@ defmodule Sparrow.H2Worker.Hns do
   @spec handle_continue(:start_conn_backoff, state) ::
           {:noreply, state} | {:stop, reason, state}
   def handle_continue(:start_conn_backoff, state = %State{config: config}) do
-    stream = backoff_stream(config)
-
-    case state.restart_connection_timer do
-      nil ->
-        {:noreply, try_start_conn(state, 0, stream)}
-
-      _ ->
-        # Backoff already in progress
-        {:noreply, state}
-    end
+    {:noreply, state}
   end
 
   def handle_info(
         {:ping, connection_ref},
         state = %State{connection_ref: connection_ref}
       ) do
-    _ =
-      if state.config.ping_interval do
-        Adapter.ping(state.connection_ref)
-
-        schedule_message_after(
-          {:ping, connection_ref},
-          state.config.ping_interval
-        )
-      end
-
     {:noreply, state}
   end
 
@@ -151,60 +132,29 @@ defmodule Sparrow.H2Worker.Hns do
     {:noreply, state}
   end
 
-  def handle_info({:END_STREAM, stream_id}, state) do
-    _ =
-      Logger.debug("Received H2 response",
-        what: :h2_response_received,
-        stream_id: inspect(stream_id)
-      )
-
-    case RequestSet.get_request(state.requests, stream_id) do
-      {:error, :not_found} ->
-        _ =
-          Logger.info("Received H2 response for unknown request",
-            what: :unknown_h2_response_received,
-            stream_id: inspect(stream_id)
-          )
-
-        :ok
-
-      {:ok, request} ->
-        _ = cancel_timer(request)
-        response = Adapter.get_response(state.connection_ref, stream_id)
-        send_response(request.from, response)
-    end
-
-    {:noreply,
-     State.new(
-       state.connection_ref,
-       RequestSet.remove(state.requests, stream_id),
-       state.config
-     )}
-  end
-
-  def handle_info({:timeout_request, stream_id}, state) do
-    _ =
-      Logger.debug("H2 request timeout",
-        what: :h2_request_timeout,
-        stream_id: "#{stream_id}"
-      )
-
-    case RequestSet.get_request(state.requests, stream_id) do
-      {:error, :not_found} ->
-        :ok
-
-      {:ok, request} ->
-        response = {:error, {:request_timeout, stream_id}}
-        send_response(request.from, response)
-    end
-
-    {:noreply,
-     State.new(
-       state.connection_ref,
-       RequestSet.remove(state.requests, stream_id),
-       state.config
-     )}
-  end
+#  def handle_info({:timeout_request, stream_id}, state) do
+#    _ =handle_info
+#      Logger.debug("H2 request timeout",
+#        what: :h2_request_timeout,
+#        stream_id: "#{stream_id}"
+#      )
+#
+#    case RequestSet.get_request(state.requests, stream_id) do
+#      {:error, :not_found} ->
+#        :ok
+#
+#      {:ok, request} ->
+#        response = {:error, {:request_timeout, stream_id}}
+#        send_response(request.from, response)
+#    end
+#
+#    {:noreply,
+#     State.new(
+#       state.connection_ref,
+#       RequestSet.remove(state.requests, stream_id),
+#       state.config
+#     )}
+#  end
 
   def handle_info({:DOWN, _ref, :process, pid, reason}, state) do
     case state.connection_ref == pid do
@@ -224,8 +174,7 @@ defmodule Sparrow.H2Worker.Hns do
           |> Map.put(:reason, reason)
         )
 
-        {:noreply, connection_closed_action(state),
-         {:continue, :start_conn_backoff}}
+        {:noreply, state}
 
       _ ->
         _ =
@@ -312,34 +261,11 @@ defmodule Sparrow.H2Worker.Hns do
           {:stop, reason, state} | {:noreply, state}
   defp try_handle(request, from, state = %State{connection_ref: nil}) do
     _ =
-      Logger.debug("Restarting H2 connection due to new request",
+      Logger.debug("No need connection for new request",
         what: :h2_restarting_conn_on_new_request,
         request: request
       )
-
-    case start_conn(state.config, state.config.reconnect_attempts) do
-      {:error, reason} ->
-        _ =
-          Logger.error("Restarting H2 connection failed",
-            what: :h2_restarting_conn_on_new_request,
-            result: :error,
-            reason: reason,
-            request: request
-          )
-
-        send_response(from, {:error, {:unable_to_connect, reason}})
-        {:noreply, state, {:continue, :start_conn_backoff}}
-
-      {:ok, state} ->
-        _ =
-          Logger.debug("Restarting H2 connection succeeded",
-            what: :h2_restarting_conn_on_new_request,
-            result: :success,
-            request: request
-          )
-
-        handle(request, from, state)
-    end
+      handle(request, from, state)
   end
 
   defp try_handle(request, from, state) do
@@ -402,23 +328,6 @@ defmodule Sparrow.H2Worker.Hns do
         {:noreply, state}
 
       {:ok, {headers, body}} ->
-#        request_timeout_ref =
-#          schedule_message_after({:timeout_request, stream_id}, request.timeout)
-#
-#        new_request =
-#          InnerRequest.new(
-#            request,
-#            from,
-#            request_timeout_ref
-#          )
-#
-#        new_state =
-#          State.new(
-#            state.connection_ref,
-#            RequestSet.add(state.requests, stream_id, new_request),
-#            state.config
-#          )
-
         :telemetry.execute(
           [:sparrow, :h2_worker, :request_success],
           %{},
@@ -637,27 +546,12 @@ defmodule Sparrow.H2Worker.Hns do
 
   defp start_conn(config) do
     case Adapter.open(config.domain, config.port, config.tls_options) do
-      {:ok, connection_ref} ->
-        _ =
-          schedule_message_after({:ping, connection_ref}, config.ping_interval)
-
-        Process.monitor(connection_ref)
-        {:ok, State.new(connection_ref, config)}
+      {:ok, _} ->
+        {:ok, State.new(nil, nil, config)}
 
       {:error, reason} ->
         {:error, reason}
     end
-  end
-
-  defp backoff_stream(%Config{
-         backoff_base: base,
-         backoff_max_delay: max_delay,
-         backoff_initial_delay: initial_delay
-       }) do
-    Stream.unfold(initial_delay * base, fn
-      e when e * base > max_delay -> {max_delay, max_delay}
-      e -> {e, e * base}
-    end)
   end
 
   defp extract_worker_info(worker_state) do
